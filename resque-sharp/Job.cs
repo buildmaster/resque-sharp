@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections;
 
+
 namespace resque
 {
 
@@ -33,10 +34,11 @@ namespace resque
             string className = (string)payload["class"];
             if (Resque.getAssemblyQualifier() != null)
             {
-                className += Resque.getAssemblyQualifier();
+                className = "WindowsWorker." + className + Resque.getAssemblyQualifier();
             }
-           
+
             return Type.GetType(className, true);
+            //return Type.GetType("GoodJob", true);
         }
 
         public static bool create(string queue, string className, params object[] args)
@@ -174,6 +176,24 @@ namespace resque
         public static string queue()
         {
             return "tester";
+        }
+        public static void perform(params object[] args)
+        {
+            System.Threading.Thread.Sleep(1000);
+            return;
+        }
+
+        public static string assemblyQualifiedName()
+        {
+            return System.Reflection.Assembly.GetExecutingAssembly().FullName;
+        }
+    }
+
+    public class WindowsJobs
+    {
+        public static string queue()
+        {
+            return "WindowsJobs";
         }
         public static void perform(params object[] args)
         {

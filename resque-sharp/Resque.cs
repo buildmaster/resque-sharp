@@ -122,7 +122,7 @@ namespace resque
 
         public static void RemoveQueue(string queue)
         {
-            redis().RemoveFromSet("resque:queues", Encoding.UTF8.GetBytes(queue));
+            redis().RemoveFromSet("resque:queues", queue);
             redis().Remove("resque:queue:" + queue);
         }
 

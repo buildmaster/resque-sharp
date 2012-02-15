@@ -73,7 +73,7 @@ namespace resque
         public void unregisterWorker()
         {
             Resque.redis().RemoveFromSet("resque:workers", workerId());
-            Resque.redis().Remove("worker:" + workerId() + ":started");
+            Resque.redis().Remove("resque:worker:" + workerId() + ":started");
             // FIXME clear stats
         }
 
@@ -123,7 +123,9 @@ namespace resque
         {
             job.worker = this;
             string data = Resque.encode(new Dictionary<string, object>() { { "queue", job.queue }, { "run_at", currentTimeFormatted() }, { "payload", job.payload } });
-            Resque.redis().Set("resque:worker:" + workerId(), data);
+            //Resque.redis().Set(new Dictionary<string, byte[]>() { { startedKey(), Encoding.UTF8.GetBytes(currentTimeFormatted()) } });
+            Resque.redis().Set(new Dictionary<string, byte[]>() { { "resque:worker:" + workerId(), Encoding.UTF8.GetBytes(data) } }, false);
+            //Resque.redis().Set("resque:worker:" + workerId(), data);
         }
 
         public Dictionary<string, object> job()
@@ -136,7 +138,7 @@ namespace resque
             return (Dictionary<string,object>)Resque.decode(job()["payload"].ToString());
         }
 
-        private void setDoneWorking()
+        private void setDoneWorking(Job job)
         {
             setProcssed();
             Resque.redis().Remove("resque:worker:" + workerId());
@@ -174,7 +176,7 @@ namespace resque
         private void setStarted()
         {
             currentTimeFormatted();
-            Resque.redis().Set(new Dictionary<string, byte[]>() { { startedKey(), Encoding.UTF8.GetBytes(currentTimeFormatted()) } });
+            Resque.redis().Set(new Dictionary<string, byte[]>() { { startedKey(), Encoding.UTF8.GetBytes(currentTimeFormatted()) } }, true);
         }
 
         private static string currentTimeFormatted()

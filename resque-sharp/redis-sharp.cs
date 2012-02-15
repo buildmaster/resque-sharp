@@ -82,10 +82,10 @@ public class Redis : IDisposable {
 		if (value == null)
 			throw new ArgumentNullException ("value");
 		
-		Set (key, Encoding.UTF8.GetBytes (value));
+		Set (key, Encoding.UTF8.GetBytes (value), value);
 	}
 	
-	public void Set (string key, byte [] value)
+	public void Set (string key, byte [] value, string pureValue)
 	{
 		if (key == null)
 			throw new ArgumentNullException ("key");
@@ -95,7 +95,7 @@ public class Redis : IDisposable {
 		if (value.Length > 1073741824)
 			throw new ArgumentException ("value exceeds 1G", "value");
 
-		if (!SendDataCommand (value, "SET {0} {1}\r\n", key, value.Length))
+        if (!SendDataCommand(value, "SET {0} {1}\r\n", key, value.Length))
 			throw new Exception ("Unable to connect");
 		ExpectSuccess ();
 	}
@@ -125,10 +125,10 @@ public class Redis : IDisposable {
 
 	public void Set (IDictionary<string,string> dict)
 	{
-	  Set(dict.ToDictionary(k => k.Key, v => Encoding.UTF8.GetBytes(v.Value)));
+	  Set(dict.ToDictionary(k => k.Key, v => Encoding.UTF8.GetBytes(v.Value)), true);
 	}
 
-	public void Set (IDictionary<string,byte []> dict)
+	public void Set (IDictionary<string,byte []> dict, bool mset)
 	{
 		if (dict == null)
 			throw new ArgumentNullException ("dict");
@@ -148,8 +148,14 @@ public class Redis : IDisposable {
 			ms.Write (val, 0, val.Length);
 			ms.Write (nl, 0, nl.Length);
 		}
-		
-		SendDataCommand (ms.ToArray (), "*" + (dict.Count * 2 + 1) + "\r\n$4\r\nMSET\r\n");
+        if (mset)
+        {
+            SendDataCommand(ms.ToArray(), "*" + (dict.Count * 2 + 1) + "\r\n$4\r\nMSET\r\n");
+        }
+        else
+        {
+            SendDataCommand(ms.ToArray(), "*" + (dict.Count * 2 + 1) + "\r\n$3\r\nSET\r\n");
+        }
 		ExpectSuccess ();
 	}
 
@@ -233,9 +239,11 @@ public class Redis : IDisposable {
 			return false;
 
 		var s = args.Length > 0 ? String.Format (cmd, args) : cmd;
+        //s = "$" + s.Length + "\r\n"+s;
 		byte [] r = Encoding.UTF8.GetBytes (s);
 		try {
-			Log ("S: " + String.Format (cmd, args));
+            //Log ("S: " + String.Format (cmd, args));
+            //Log("S: "+ s);
 			socket.Send (r);
 			if (data != null){
 				socket.Send (data);
@@ -651,14 +659,16 @@ public class Redis : IDisposable {
 
 
     #region Set commands
-    public bool AddToSet(string key, byte[] member)
+    public bool AddToSet(string key, byte[] member, string workerName)
     {
-        return SendDataExpectInt(member, "SADD {0} {1}\r\n", key, member.Length) > 0 ? true : false;
+        //return SendDataExpectInt(member, "SADD {0} {1}\r\n", key, member.Length) > 0 ? true : false;
+        return SendDataExpectInt(null, "SADD {0} {1}\r\n", key, workerName) > 0 ? true : false;
+        //return SendDataExpectInt(member, "$4 sadd ${0} {1}\r\n ${2} {3}", key.Length, key, member.Length, member) > 0 ? true : false;
     }
 
     public bool AddToSet(string key, string member)
     {
-        return AddToSet(key, Encoding.UTF8.GetBytes(member));
+        return AddToSet(key, Encoding.UTF8.GetBytes(member), member);
     }
 
     public int CardinalityOfSet(string key)
@@ -687,14 +697,14 @@ public class Redis : IDisposable {
         }
     }
 
-    public bool RemoveFromSet(string key, byte[] member)
+    public bool RemoveFromSet(string key, byte[] member, string workerName)
     {
-        return SendDataExpectInt(member, "SREM {0} {1}\r\n", key, member.Length) > 0 ? true : false;
+        return SendDataExpectInt(null, "SREM {0} {1}\r\n", key, workerName) > 0 ? true : false;
     }
 
     public bool RemoveFromSet(string key, string member)
     {
-        return RemoveFromSet(key, Encoding.UTF8.GetBytes(member));
+        return RemoveFromSet(key, Encoding.UTF8.GetBytes(member), member);
     }
 
     #endregion
