@@ -19,6 +19,7 @@ namespace resque
         private static string staticAssemblyQualifier;
         private static RedisConnection staticRedis;
         private static Failure.Failure Failure;
+        private static readonly object RedisLock= new object();
 
         public static string getAssemblyQualifier()
         {
@@ -50,18 +51,22 @@ namespace resque
         }
         public static RedisConnection redis()
         {
-            if (staticRedis == null)
+            lock (RedisLock)
             {
-                staticRedis = new RedisConnection("localhost");
-            }
-            if (staticRedis.State !=
-                RedisConnectionBase.ConnectionState.Open && staticRedis.State!= RedisConnectionBase.ConnectionState.Opening)
-            {
-            
-            staticRedis.Open();
-        }
+                if (staticRedis == null)
+                {
+                    staticRedis = new RedisConnection("localhost");
+                }
+                if (staticRedis.State !=
+                    RedisConnectionBase.ConnectionState.Open &&
+                    staticRedis.State != RedisConnectionBase.ConnectionState.Opening)
+                {
 
-    return staticRedis;
+                    staticRedis.Open();
+                }
+
+                return staticRedis;
+            }
         }
 
         public static Worker[] working()

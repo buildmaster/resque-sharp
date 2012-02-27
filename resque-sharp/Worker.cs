@@ -9,7 +9,7 @@ using Newtonsoft.Json.Linq;
 
 namespace resque
 {
-    public class Worker
+    public class Worker:IDisposable
     {
         string[] queues;
         public string id { get; set; }
@@ -72,9 +72,12 @@ namespace resque
 
         public void unregisterWorker()
         {
-            Resque.redis().Sets.Remove(0,"resque:workers", workerId());
-            Resque.redis().Keys.Remove(0,"resque:worker:" + workerId() + ":started");
-            // FIXME clear stats
+            Resque.redis().Sets.Remove(0, "resque:workers", id);
+            Resque.redis().Keys.Remove(0, "resque:worker:" + workerId());
+            Resque.redis().Keys.Remove(0, startedKey());
+
+            Stat.clear("processed:" + workerId());
+            Stat.clear("failed:" + workerId());
         }
 
         private void process(Job job, Func<Job, bool> block)
@@ -86,7 +89,14 @@ namespace resque
             }
             catch (Exception e)
             {
-                job.fail(e);
+                if (e.InnerException != null)
+                {
+                    job.fail(e.InnerException);
+                }
+                else
+                {
+                    job.fail(e);
+                }
                 setFailed();
             }
             finally
@@ -283,6 +293,11 @@ namespace resque
         {
             int processID = System.Diagnostics.Process.GetCurrentProcess().Id;
             return processID.ToString();
+        }
+        
+        public void Dispose()
+        {
+           unregisterWorker();
         }
     }
 }
