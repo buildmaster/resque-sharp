@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections;
 using System.Text.RegularExpressions;
+using BookSleeve;
 
 namespace resque
 {
@@ -16,7 +17,7 @@ namespace resque
     public class Resque
     {
         private static string staticAssemblyQualifier;
-        private static Redis staticRedis;
+        private static RedisConnection staticRedis;
         private static Failure.Failure Failure;
 
         public static string getAssemblyQualifier()
@@ -43,17 +44,24 @@ namespace resque
                 Failure = value;
             }
         }
-        public static void setRedis(Redis redis)
+        public static void setRedis(RedisConnection redis)
         {
             staticRedis = redis;
         }
-        public static Redis redis()
+        public static RedisConnection redis()
         {
             if (staticRedis == null)
             {
-                staticRedis = new Redis();
+                staticRedis = new RedisConnection("localhost");
             }
-            return staticRedis;
+            if (staticRedis.State !=
+                RedisConnectionBase.ConnectionState.Open && staticRedis.State!= RedisConnectionBase.ConnectionState.Opening)
+            {
+            
+            staticRedis.Open();
+        }
+
+    return staticRedis;
         }
 
         public static Worker[] working()
@@ -73,14 +81,16 @@ namespace resque
 
         public static bool Push(string queue, object item)
         {
+         
             watchQueue(queue);
-            redis().RightPush("resque:queue:" + queue, encode(item));
+            redis().Lists.AddLast(0, "resque:queue:" + queue, encode(item));
             return true;
         }
 
         public static Dictionary<string, object> Pop(string queue)
         {
-            var data = redis().LeftPop("resque:queue:" + queue);
+
+            var data = redis().Lists.RemoveFirst(0, "resque:queue:" + queue).Result;
             return decodeData(data);
         }
 
@@ -88,13 +98,13 @@ namespace resque
 
         public static Dictionary<string, object> Peek(string queue)
         {
-            var data = redis().ListIndex("resque:queue:" + queue, 0);
+            var data = redis().Lists.Get(0,"resque:queue:" + queue, 0).Result;
             return decodeData(data);
         }
 
         public static Dictionary<string, object> Peek(string queue, int start)
         {
-            var resultData = redis().ListRange("resque:queue:" + queue, start, start);
+            var resultData = redis().Lists.Range(0,"resque:queue:" + queue, start, start).Result;
             if (resultData.Length == 0)
             {
                 return null;
@@ -112,7 +122,7 @@ namespace resque
             }
             else
             {
-                foreach (byte[] data in redis().ListRange("resque:queue:" + queue, start, start + count - 1))
+                foreach (byte[] data in redis().Lists.Range(0,"resque:queue:" + queue, start, start + count - 1).Result)
                 {
                     results.Add(decodeData(data));
                 }
@@ -122,18 +132,18 @@ namespace resque
 
         public static void RemoveQueue(string queue)
         {
-            redis().RemoveFromSet("resque:queues", queue);
-            redis().Remove("resque:queue:" + queue);
+            redis().Sets.Remove(0,"resque:queues", queue);
+            redis().Keys.Remove(0,"resque:queue:" + queue);
         }
 
         private static void watchQueue(string queue)
         {
-            redis().AddToSet("resque:queues", queue);
+            redis().Sets.Add(0,"resque:queues", queue);
         }
 
         public static string[] queues()
         {
-            byte[][] rawResults = redis().GetMembersOfSet("resque:queues");
+            byte[][] rawResults = redis().Sets.GetAll(0,"resque:queues").Result;
             if (rawResults.Length == 0)
                 return new string[0];
             string[] results = new string[rawResults.Length];
@@ -157,16 +167,12 @@ namespace resque
 
         public static int size(string queue)
         {
-            return redis().ListLength("resque:queue:" + queue);
+            return (int) redis().Lists.GetLength(0,"resque:queue:" + queue).Result;
         }
 
         public static string[] keys()
         {
-            var mungedKeys = from k in redis().Keys
-                             where Regex.Match(k, "^resque:").Success
-                             select Regex.Replace(k, "^resque:", "");
-
-            return mungedKeys.ToArray<string>();
+            return redis().Keys.Find(0, "resque:*").Result.Select(k=>k.Remove(0,7)).ToArray();
         }
 
         public static bool enqueue(string className, params object[] args)

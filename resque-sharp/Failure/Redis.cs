@@ -21,29 +21,31 @@ namespace resque.Failure
         {
             Dictionary<string, object> data = new Dictionary<string,object>();
 
-            data.Add("failed_at", System.DateTime.Now);
+            data.Add("failed_at", System.DateTime.UtcNow.ToString("yyyy/MM/dd HH:mm:ss"));
             data.Add("payload", payload);
             data.Add("error", exception.Message);
-            data.Add("backtrace", exception.ToString());
-            data.Add("worker", worker.ToString());
-            data.Add("queue", queue.ToString());
+            data.Add("exception",exception.Message);
+            data.Add("backtrace", exception.StackTrace.Split('\n'));
 
-            Resque.redis().RightPush("resque:failed", Resque.encode(data));
+            data.Add("worker", worker.workerId());
+            data.Add("queue", queue);
+
+            Resque.redis().Lists.AddLast(0,"resque:failed", Resque.encode(data));
         }
 
         public static int count()
         {
-            return Resque.redis().ListLength("resque:failed");
+            return (int)Resque.redis().Lists.GetLength(0,"resque:failed").Result;
         }
 
         public static Byte[][] all(int start, int end)
         {
-            return Resque.redis().ListRange("resque:failed", start, end);
+            return Resque.redis().Lists.Range(0,"resque:failed", start, end).Result;
         }
 
         public static Byte[][] all()
         {
-            return Resque.redis().ListRange("resque:failed", 0, Resque.redis().ListLength("resque:failed"));
+            return Resque.redis().Lists.Range(0,"resque:failed", 0, (int) Resque.redis().Lists.GetLength(0,"resque:failed").Result).Result;
         }
 
         public static string url()
@@ -54,7 +56,7 @@ namespace resque.Failure
         //TODO: Redo this to delete the resque:failure queue from the redis object
         public static void clear()
         {
-            Resque.redis().Remove("resque:failed");
+            Resque.redis().Keys.Remove(0,"resque:failed");
         }
     }
 }

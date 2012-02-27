@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using BookSleeve;
 using NUnit.Framework;
 
 namespace resque
@@ -25,13 +26,18 @@ namespace resque
         public void Init()
         {
             // This is the IP address of my computer running Redis. 
-            server = "ec2-184-73-7-218.compute-1.amazonaws.com";
-            //server = "192.168.56.102";
+            //server = "ec2-184-73-7-218.compute-1.amazonaws.com";
+            server = "172.19.104.133";
 
-            Resque.setRedis(new Redis(server, 6379));
-            Resque.redis().FlushAll();
+            Resque.setRedis(new RedisConnection(server, 6379,allowAdmin:true));
+            Resque.redis().Server.FlushAll();
         }
-
+        [TearDown]
+        public void TearDown()
+        {
+            Resque.redis().Server.FlushAll();
+            Resque.redis().Close(true);
+        }
         [Test]
         public void canCreateAStat()
         {

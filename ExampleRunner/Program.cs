@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using BookSleeve;
 using resque;
 using System.Reflection;
 
@@ -13,7 +14,7 @@ class DummyJob
     }
     public static void perform(params object[] args)
     {
-        Console.WriteLine("This is the dummy job reporting in");
+        Console.WriteLine("This is the dummy job reporting in:{0},{1},{2}",args);
     }
 }
 
@@ -31,9 +32,9 @@ namespace ExampleRunner
             Console.WriteLine(t.AssemblyQualifiedName);
             string assemblyQualification = ", ExampleRunner, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
             Resque.setAssemblyQualifier(assemblyQualification);
-            String server = "192.168.1.7";
-            Resque.setRedis(new Redis(server, 6379));
-            Job.create("jobs", "DummyJob", "foo", 20, "bar");
+            String server = "172.19.104.133";
+            Resque.setRedis(new RedisConnection(server, 6379));
+            Job.create("jobs", "DummyJob", "foo", 20, "bar");   
             Worker w = new Worker("*");
             w.work(1);
         }

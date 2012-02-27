@@ -34,7 +34,7 @@ namespace resque
             string className = (string)payload["class"];
             if (Resque.getAssemblyQualifier() != null)
             {
-                className = "WindowsWorker." + className + Resque.getAssemblyQualifier();
+                className = className + Resque.getAssemblyQualifier();
             }
 
             return Type.GetType(className, true);

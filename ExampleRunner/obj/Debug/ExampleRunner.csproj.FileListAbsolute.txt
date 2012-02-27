@@ -8,3 +8,17 @@ C:\Users\Chad\src\o\resque-sharp\ExampleRunner\bin\Debug\Newtonsoft.Json.Net20.x
 C:\Users\Chad\src\o\resque-sharp\ExampleRunner\obj\Debug\ResolveAssemblyReference.cache
 C:\Users\Chad\src\o\resque-sharp\ExampleRunner\obj\Debug\ExampleRunner.exe
 C:\Users\Chad\src\o\resque-sharp\ExampleRunner\obj\Debug\ExampleRunner.pdb
+\\psf\Host\Volumes\Storage\Projects\resque-sharp\ExampleRunner\obj\Debug\ExampleRunner.exe
+\\psf\Host\Volumes\Storage\Projects\resque-sharp\ExampleRunner\obj\Debug\ExampleRunner.pdb
+\\psf\Host\Volumes\Storage\Projects\resque-sharp\ExampleRunner\bin\Debug\ExampleRunner.exe.config
+\\psf\Host\Volumes\Storage\Projects\resque-sharp\ExampleRunner\bin\Debug\ExampleRunner.exe
+\\psf\Host\Volumes\Storage\Projects\resque-sharp\ExampleRunner\bin\Debug\ExampleRunner.pdb
+\\psf\Host\Volumes\Storage\Projects\resque-sharp\ExampleRunner\bin\Debug\resque-sharp.dll
+\\psf\Host\Volumes\Storage\Projects\resque-sharp\ExampleRunner\bin\Debug\Newtonsoft.Json.Net20.dll
+\\psf\Host\Volumes\Storage\Projects\resque-sharp\ExampleRunner\bin\Debug\resque-sharp.pdb
+\\psf\Host\Volumes\Storage\Projects\resque-sharp\ExampleRunner\bin\Debug\Newtonsoft.Json.Net20.pdb
+\\psf\Host\Volumes\Storage\Projects\resque-sharp\ExampleRunner\bin\Debug\Newtonsoft.Json.Net20.xml
+\\psf\Host\Volumes\Storage\Projects\resque-sharp\ExampleRunner\obj\Debug\ResolveAssemblyReference.cache
+\\psf\Host\Volumes\Storage\Projects\resque-sharp\ExampleRunner\bin\Debug\BookSleeve.dll
+\\psf\Host\Volumes\Storage\Projects\resque-sharp\ExampleRunner\bin\Debug\BookSleeve.pdb
+\\psf\Host\Volumes\Storage\Projects\resque-sharp\ExampleRunner\bin\Debug\BookSleeve.xml

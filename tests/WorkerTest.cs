@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using BookSleeve;
 using NUnit.Framework;
 
 namespace resque
@@ -24,13 +25,19 @@ namespace resque
         [SetUp]
         public void Init()
         {
-            server = "ec2-184-73-7-218.compute-1.amazonaws.com";
-            //string server = "192.168.56.102";
+            //server = "ec2-184-73-7-218.compute-1.amazonaws.com";
+            server = "172.19.104.133";
 
-            Resque.setRedis(new Redis(server, 6379));
-            Resque.redis().FlushAll();
+            Resque.setRedis(new RedisConnection(server, 6379,allowAdmin:true));
+            Resque.redis().Server.FlushAll();
             worker = new Worker("jobs");
             //Job.create("jobs", "resque.DummyJob", 20, "/tmp");
+        }
+        [TearDown]
+        public void TearDown()
+        {
+            Resque.redis().Server.FlushAll();
+        Resque.redis().Close(true);
         }
 
         [Test]

@@ -72,8 +72,8 @@ namespace resque
 
         public void unregisterWorker()
         {
-            Resque.redis().RemoveFromSet("resque:workers", workerId());
-            Resque.redis().Remove("resque:worker:" + workerId() + ":started");
+            Resque.redis().Sets.Remove(0,"resque:workers", workerId());
+            Resque.redis().Keys.Remove(0,"resque:worker:" + workerId() + ":started");
             // FIXME clear stats
         }
 
@@ -95,7 +95,7 @@ namespace resque
                 {
                     block(job);
                 }
-                setDoneWorking();
+                setDoneWorking(job);
             }
         }
 
@@ -116,6 +116,8 @@ namespace resque
         private void setFailed()
         {
              // FIXME : do stats stuff
+            resque.Stat.increment("failed:"+workerId());
+            resque.Stat.increment("failed");
             resque.Stat.increment("failure");
         }
 
@@ -124,13 +126,13 @@ namespace resque
             job.worker = this;
             string data = Resque.encode(new Dictionary<string, object>() { { "queue", job.queue }, { "run_at", currentTimeFormatted() }, { "payload", job.payload } });
             //Resque.redis().Set(new Dictionary<string, byte[]>() { { startedKey(), Encoding.UTF8.GetBytes(currentTimeFormatted()) } });
-            Resque.redis().Set(new Dictionary<string, byte[]>() { { "resque:worker:" + workerId(), Encoding.UTF8.GetBytes(data) } }, false);
+            Resque.redis().Strings.Set(0,new Dictionary<string, byte[]>() { { "resque:worker:" + workerId(), Encoding.UTF8.GetBytes(data) } }, false);
             //Resque.redis().Set("resque:worker:" + workerId(), data);
         }
 
         public Dictionary<string, object> job()
         {
-            return (Dictionary<string,object>)Resque.decode(Resque.redis().Get("resque:worker:" + workerId()));
+            return (Dictionary<string,object>)Resque.decode(Resque.redis().Strings.Get(0,"resque:worker:" + workerId()).Result);
         }
 
         public Dictionary<string, object> payload()
@@ -141,12 +143,14 @@ namespace resque
         private void setDoneWorking(Job job)
         {
             setProcssed();
-            Resque.redis().Remove("resque:worker:" + workerId());
+            Resque.redis().Keys.Remove(0,"resque:worker:" + workerId());
         }
 
         private void setProcssed()
         {
             //FIXME
+            resque.Stat.increment("processed:" + workerId());
+            resque.Stat.increment("processed");
         }
 
         private void startup()
@@ -157,7 +161,7 @@ namespace resque
 
         private void registerWorker()
         {
-            Resque.redis().AddToSet("resque:workers", workerId());
+            Resque.redis().Sets.Add(0,"resque:workers", workerId());
             setStarted();
         }
 
@@ -176,7 +180,7 @@ namespace resque
         private void setStarted()
         {
             currentTimeFormatted();
-            Resque.redis().Set(new Dictionary<string, byte[]>() { { startedKey(), Encoding.UTF8.GetBytes(currentTimeFormatted()) } }, true);
+            Resque.redis().Strings.Set(0,new Dictionary<string, byte[]>() { { startedKey(), Encoding.UTF8.GetBytes(currentTimeFormatted()) } }, true);
         }
 
         private static string currentTimeFormatted()
@@ -201,7 +205,7 @@ namespace resque
         }
         public string state()
         {
-            return Resque.redis().ContainsKey("resque:worker:" + workerId()) ? "working" : "idle";
+            return Resque.redis().Keys.Exists(0,"resque:worker:" + workerId()).Result ? "working" : "idle";
         }
 
         public string workerId()
@@ -220,7 +224,7 @@ namespace resque
 
         internal static Worker[] all()
         {
-            var workers = from id in Resque.redis().GetMembersOfSet("resque:workers")
+            var workers = from id in Resque.redis().Sets.GetAll(0,"resque:workers").Result
                                select find(Encoding.UTF8.GetString(id));
 
             return workers.ToArray<Worker>();
@@ -245,7 +249,9 @@ namespace resque
 
         public static bool isExisting(string id)
         {
-            return Resque.redis().IsMemberOfSet("resque:workers", id);
+            return Resque.redis().Sets.Contains(0, "resque:workers", id).Result;
+
+            //IsMemberOfSet(0,"resque:workers", id).Result;
         }
 
         internal static Worker[] working()
@@ -255,7 +261,7 @@ namespace resque
                 return workers;
             string[] names = (from worker in workers
                              select "resque:worker:" + worker.workerId()).ToArray<string>();
-            string[] redisValues = (from bytes in Resque.redis().GetKeys(names)
+            string[] redisValues = (from bytes in Resque.redis().Strings.Get(0,names).Result
                                     select bytes == null ? null : Encoding.UTF8.GetString(bytes)).ToArray<string>(); ;
             List<Worker> results = new List<Worker>();
             for (int i = 0; i < names.Length; i++)

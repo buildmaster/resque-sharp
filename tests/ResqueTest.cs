@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using BookSleeve;
 using NUnit.Framework;
 using Newtonsoft.Json.Linq;
 using System.Collections;
@@ -26,14 +27,20 @@ namespace resque
         [SetUp]
         public void Init()
         {
-            String server = "ec2-184-73-7-218.compute-1.amazonaws.com";
-            
-            //String server = "192.168.56.102";
-            new Redis(server, 6379).FlushAll(); // This is the IP address of my computer running Redis. 
-            Resque.setRedis(new Redis(server, 6379));
+            //String server = "ec2-184-73-7-218.compute-1.amazonaws.com";
+
+            String server = "172.19.104.133";
+            Resque.setRedis(new RedisConnection(server,allowAdmin:true));
+            Resque.redis().Server.FlushAll();
             Resque.Push("people", new Dictionary<string, string>(){{"name", "chris"}});
             Resque.Push("people", new Dictionary<string, string>(){{"name", "bob"}});
             Resque.Push("people", new Dictionary<string, string>(){{"name", "mark"}});
+        }
+        [TearDown]
+        public void TearDown()
+        {
+            Resque.redis().Server.FlushAll();
+            Resque.redis().Close(true);
         }
         [Test]
         public void CanPutJobsOnAQueue()
