@@ -2,36 +2,34 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace resque
-{
-    namespace Failure
+namespace ResqueSharp.Failure
     {
         public abstract class Backend
         {
-            public Exception exception { get; set; }
-            public Worker worker { get; set; }
-            public string queue { get; set; }
-            public object payload { get; set; }
+            public Exception Exception { get; set; }
+            public Worker Worker { get; set; }
+            public string Queue { get; set; }
+            public object Payload { get; set; }
 
-            public Backend(Exception exception, Worker worker, String queue, Object payload)
+            protected Backend(Exception exception, Worker worker, String queue, Object payload)
             {
-                this.exception = exception;
-                this.worker = worker;
-                this.queue = queue;
-                this.payload = payload;
+                Exception = exception;
+                Worker = worker;
+                Queue = queue;
+                Payload = payload;
             }
 
-            public Backend()
+            protected Backend()
             {
-                this.exception = null;
-                this.worker = null;
-                this.queue = null;
-                this.payload = null;
+                Exception = null;
+                Worker = null;
+                Queue = null;
+                Payload = null;
             }
 
             //Declaring these as abstract to force subclass to
             //implement them
-            public abstract void save();
+            public abstract void Save();
 
             //FIXME: Temporarily commenting out, figure out correct keywords
             //public abstract string url();
@@ -46,7 +44,7 @@ namespace resque
             }*/
             //=======FIXME========
 
-            public void log(string message)
+            public void Log(string message)
             {
                 //TODO: Implement worker log function
                 //worker.log(message)
@@ -54,5 +52,5 @@ namespace resque
 
         }
 
-    }
+    
 }

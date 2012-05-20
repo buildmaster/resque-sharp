@@ -1,47 +1,43 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections;
 
 
-namespace resque
+namespace ResqueSharp
 {
 
 
     public class Job
     {
-        public Dictionary<string, object> payload { get; set; }
-        public string queue { get; set; }
-        public Worker worker{get; set;}
+        public Dictionary<string, object> Payload { get; set; }
+        public string Queue { get; set; }
+        public Worker Worker{get; set;}
 
         public Job()
         {
             throw new NotImplementedException();
         }
 
-        public Job(string queue, Dictionary<string, object> payload)
+        Job(string queue, Dictionary<string, object> payload)
         {
-            this.queue = queue;
-            this.payload = payload;
+            Queue = queue;
+            Payload = payload;
         }
 
         public Type PayloadClass()
         {
-            string className = (string)payload["class"];
-            if (Resque.getAssemblyQualifier() != null)
+            var className = (string)Payload["class"];
+            if (Resque.GetAssemblyQualifier() != null)
             {
-                className = className + Resque.getAssemblyQualifier();
+                className = className + Resque.GetAssemblyQualifier();
             }
 
             return Type.GetType(className, true);
             //return Type.GetType("GoodJob", true);
         }
 
-        public static bool create(string queue, string className, params object[] args)
+        public static bool Create(string queue, string className, params object[] args)
         {
             if (String.IsNullOrEmpty(className))
             {
@@ -60,21 +56,21 @@ namespace resque
 
         }
 
-        internal void perform()
+        internal void Perform()
         {
 
-            System.Reflection.MethodInfo methodInfo = PayloadClass().GetMethod("perform", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.FlattenHierarchy);
+            System.Reflection.MethodInfo methodInfo = PayloadClass().GetMethod("Perform", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.FlattenHierarchy);
             if (methodInfo == null)
-                throw new NotImplementedException("Jobs must have a perform static method");
-            object[] parameters = new object[1]{args().ToArray()};
+                throw new NotImplementedException("Jobs must have a Perform static method");
+            object[] parameters = new object[]{Args().ToArray()};
             methodInfo.Invoke(null, parameters);
 
         }
 
-        public ArrayList args()
+        public ArrayList Args()
         {
-            ArrayList list = new ArrayList();
-            JArray args = (JArray)payload["args"];
+            var list = new ArrayList();
+            var args = (JArray)Payload["args"];
                 foreach (JValue o in args)
                 {
                     list.Add(o.Value);
@@ -86,18 +82,18 @@ namespace resque
 
         public void recreate()
         {
-            Job.create(queue, PayloadClass().FullName, args().ToArray());
+            Job.Create(Queue, PayloadClass().FullName, Args().ToArray());
         }
         public override bool Equals(object other)
         {
             if (other == null)
                 return false;
-            if (object.ReferenceEquals(this, other))
+            if (ReferenceEquals(this, other))
                 return true;
-            if (this.GetType() != other.GetType())
+            if (GetType() != other.GetType())
                 return false;
             Job job = (Job)other;
-            return (this.queue == job.queue && this.PayloadClass() == job.PayloadClass() && arrayListElementsAreEqual(args(), job.args()));
+            return (this.Queue == job.Queue && this.PayloadClass() == job.PayloadClass() && arrayListElementsAreEqual(Args(), job.Args()));
         }
 
         private bool arrayListElementsAreEqual(ArrayList list, ArrayList otherList)
@@ -118,26 +114,26 @@ namespace resque
             return true;
         }
 
-        internal void fail(Exception e)
+        internal void Fail(Exception e)
         {
-            Failure.Redis failure = new Failure.Redis(e, worker, queue, payload);
-            failure.save();
+            var failure = new Failure.Redis(e, Worker, Queue, Payload);
+            failure.Save();
         }
     }
 
 
     public class DummyJob
     {
-        public static string queue()
+        public static string Queue()
         {
             return "tester";
         }
-        public static void perform(params object[] args)
+        public static void Perform(params object[] args)
         {
             Console.WriteLine("This is the dummy job reporting in");
         }
 
-        public static string assemblyQualifiedName()
+        public static string AssemblyQualifiedName()
         {
             return System.Reflection.Assembly.GetExecutingAssembly().FullName;
         }
@@ -149,11 +145,11 @@ namespace resque
     }
     public class NotDummyJob
     {
-        public static string queue()
+        public static string Queue()
         {
             return "tester";
         }
-        public static void perform(params object[] args)
+        public static void Perform(params object[] args)
         {
             Console.WriteLine("This is the not dummy job reporting in");
         }
@@ -161,11 +157,11 @@ namespace resque
 
     public class BadJob
     {
-        public static string queue()
+        public static string Queue()
         {
             return "tester";
         }
-        public static void perform(params object[] args)
+        public static void Perform(params object[] args)
         {
             throw new Exception("Bad Job!!");
         }
@@ -173,17 +169,16 @@ namespace resque
 
     public class GoodJob
     {
-        public static string queue()
+        public static string Queue()
         {
             return "tester";
         }
-        public static void perform(params object[] args)
+        public static void Perform(params object[] args)
         {
             System.Threading.Thread.Sleep(1000);
-            return;
         }
 
-        public static string assemblyQualifiedName()
+        public static string AssemblyQualifiedName()
         {
             return System.Reflection.Assembly.GetExecutingAssembly().FullName;
         }
@@ -191,14 +186,13 @@ namespace resque
 
     public class WindowsJobs
     {
-        public static string queue()
+        public static string Queue()
         {
             return "WindowsJobs";
         }
-        public static void perform(params object[] args)
+        public static void Perform(params object[] args)
         {
             System.Threading.Thread.Sleep(1000);
-            return;
         }
     }
 
