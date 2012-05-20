@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
+using ResqueSharp;
 using ServiceStack.Redis;
-using resque;
 using System.Reflection;
 
 
@@ -56,7 +56,7 @@ namespace ExampleRunner
     {
         static void Main()
         {
-            Console.WriteLine(resque.DummyJob.AssemblyQualifiedName());
+            Console.WriteLine(ResqueSharp.DummyJob.AssemblyQualifiedName());
 
             Type t = typeof (DummyJob);
             Assembly.GetExecutingAssembly();
